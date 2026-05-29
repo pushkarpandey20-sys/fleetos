@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "echo Use individual services"
+    "build": "cd services/order-service && npm install --ignore-scripts && npm run build",
+    "start": "cd services/order-service && npm start",
+    "dev": "cd services/order-service && npm run dev"
   },
   "devDependencies": {
-    "eslint": "^8.57.0",
-    "@typescript-eslint/eslint-plugin": "^7.0.0",
-    "@typescript-eslint/parser": "^7.0.0"
+    "eslint": "^8.57.0"
   }
 }
