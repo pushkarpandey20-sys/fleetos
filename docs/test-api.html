@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>FleetOS Login Test</title>
+<style>body{font-family:monospace;background:#0f1117;color:#e8eaf6;padding:20px;max-width:600px}
+input{background:#1a1d27;border:1px solid #2e3250;color:#e8eaf6;padding:8px;width:100%;margin:4px 0;border-radius:4px}
+button{background:#4f8ef7;color:#fff;border:none;padding:10px 20px;border-radius:4px;cursor:pointer;margin:4px 0}
+pre{background:#1a1d27;padding:12px;border-radius:4px;overflow-x:auto;font-size:12px;white-space:pre-wrap}
+.ok{color:#3ecf8e}.err{color:#f87171}.label{color:#8b90b8;font-size:12px;margin-top:12px;margin-bottom:4px}
+</style></head>
+<body>
+<h2>🚚 FleetOS API Tester</h2>
+<div class="label">API Base URL</div>
+<input id="api" value="https://fleetos-xcgj.onrender.com"/>
+<div class="label">Email</div>
+<input id="email" value="admin@fleetos.io"/>
+<div class="label">Password</div>  
+<input id="pass" type="password" value="Admin@1234"/>
+<br><br>
+<button onclick="testHealth()">1. Test /health</button>
+<button onclick="testLogin()">2. Test /v1/auth/login</button>
+<button onclick="testOrders()">3. Test /v1/orders</button>
+<div class="label">Response:</div>
+<pre id="out">Click a button to test...</pre>
+
+<script>
+const api=()=>document.getElementById('api').value;
+const out=(txt,ok)=>{const el=document.getElementById('out');el.textContent=txt;el.className=ok?'ok':'err';};
+
+async function testHealth(){
+  out('Testing health...','');
+  try{
+    const r=await fetch(api()+'/health');
+    const d=await r.json();
+    out('Status: '+r.status+'\n\n'+JSON.stringify(d,null,2),r.ok);
+  }catch(e){out('ERROR: '+e.message+'\n\nThis usually means:\n1. API is sleeping (wait 30s, retry)\n2. CORS is blocking (try from Postman or curl)',false);}
+}
+
+async function testLogin(){
+  out('Testing login...','');
+  try{
+    const r=await fetch(api()+'/v1/auth/login',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:document.getElementById('email').value,password:document.getElementById('pass').value})
+    });
+    const d=await r.json();
+    out('Status: '+r.status+'\n\n'+JSON.stringify(d,null,2),r.ok);
+    if(d.access_token)localStorage.setItem('ft',d.access_token);
+  }catch(e){out('ERROR: '+e.message+'\n\nIf CORS error: The API needs to allow this origin.\nTry opening: '+api()+'/v1/auth/login in a new tab',false);}
+}
+
+async function testOrders(){
+  const token=localStorage.getItem('ft');
+  if(!token){out('Login first!',false);return;}
+  out('Testing orders...','');
+  try{
+    const r=await fetch(api()+'/v1/orders',{headers:{'Authorization':'Bearer '+token}});
+    const d=await r.json();
+    out('Status: '+r.status+'\n\n'+JSON.stringify(d,null,2),r.ok);
+  }catch(e){out('ERROR: '+e.message,false);}
+}
+</script>
+</body>
+</html>
