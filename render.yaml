@@ -3,8 +3,8 @@ services:
     name: fleetos-api
     runtime: node
     rootDir: services/order-service
-    buildCommand: npm install --ignore-scripts
-    startCommand: node -e "require('ts-node').register({transpileOnly:true}); require('./src/server.ts')"
+    buildCommand: npm install --ignore-scripts && npm run build
+    startCommand: npm start
     plan: free
     healthCheckPath: /health
     envVars:
