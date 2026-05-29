@@ -4,10 +4,7 @@
   "private": true,
   "scripts": {
     "build": "cd services/order-service && npm install --ignore-scripts && npm run build",
-    "start": "cd services/order-service && npm start",
+    "start": "cd services/order-service && node dist/server.js",
     "dev": "cd services/order-service && npm run dev"
-  },
-  "devDependencies": {
-    "eslint": "^8.57.0"
   }
 }
