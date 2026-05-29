@@ -13,8 +13,22 @@ import { requestLogger } from './middleware/logger';
 
 const app = express();
 
-app.use(helmet());
-app.use(cors({ origin: (process.env.ALLOWED_ORIGINS || '').split(',') }));
+const allowedOrigins = [
+  'https://pushkarpandey20-sys.github.io',
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:8080',
+  '*'
+];
+
+app.use(helmet({ crossOriginResourcePolicy: false }));
+app.use(cors({
+  origin: (origin, callback) => callback(null, true),
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
+  credentials: true,
+}));
+app.options('*', cors());
 app.use(json({ limit: '5mb' }));
 app.use(requestLogger);
 
