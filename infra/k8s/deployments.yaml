@@ -1,0 +1,285 @@
+# infra/k8s/order-service.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: fleetos
+  labels:
+    app: order-service
+    version: v1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: order-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      containers:
+      - name: order-service
+        image: gcr.io/fleetos/order-service:latest
+        ports:
+        - containerPort: 3001
+        env:
+        - name: NODE_ENV
+          value: production
+        - name: PORT
+          value: "3001"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: fleetos-secrets
+              key: database-url
+        - name: KAFKA_BROKERS
+          valueFrom:
+            configMapKeyRef:
+              name: fleetos-config
+              key: kafka-brokers
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: fleetos-secrets
+              key: redis-url
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: fleetos-secrets
+              key: jwt-secret
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3001
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3001
+          initialDelaySeconds: 30
+          periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: fleetos
+spec:
+  selector:
+    app: order-service
+  ports:
+  - port: 3001
+    targetPort: 3001
+  type: ClusterIP
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: order-service-hpa
+  namespace: fleetos
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: order-service
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 70
+---
+# Rider service with WebSocket sticky sessions
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rider-service
+  namespace: fleetos
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: rider-service
+  template:
+    metadata:
+      labels:
+        app: rider-service
+    spec:
+      containers:
+      - name: rider-service
+        image: gcr.io/fleetos/rider-service:latest
+        ports:
+        - containerPort: 3002
+          name: http
+        - containerPort: 3005
+          name: ws
+        env:
+        - name: NODE_ENV
+          value: production
+        resources:
+          requests:
+            cpu: "300m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rider-service
+  namespace: fleetos
+  annotations:
+    # Sticky sessions for WebSocket connections
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+spec:
+  selector:
+    app: rider-service
+  ports:
+  - name: http
+    port: 3002
+    targetPort: 3002
+  - name: ws
+    port: 3005
+    targetPort: 3005
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 3600
+---
+# Dispatch engine — single consumer group, 3 replicas for failover
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dispatch-engine
+  namespace: fleetos
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: dispatch-engine
+  template:
+    metadata:
+      labels:
+        app: dispatch-engine
+    spec:
+      containers:
+      - name: dispatch-engine
+        image: gcr.io/fleetos/dispatch-engine:latest
+        env:
+        - name: KAFKA_BROKERS
+          valueFrom:
+            configMapKeyRef:
+              name: fleetos-config
+              key: kafka-brokers
+        - name: REDIS_ADDR
+          valueFrom:
+            configMapKeyRef:
+              name: fleetos-config
+              key: redis-addr
+        - name: OSRM_URL
+          valueFrom:
+            configMapKeyRef:
+              name: fleetos-config
+              key: osrm-url
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "256Mi"
+---
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fleetos
+---
+# Config map
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fleetos-config
+  namespace: fleetos
+data:
+  kafka-brokers: "kafka-service:9092"
+  redis-addr: "redis-service:6379"
+  osrm-url: "http://osrm-service:5000"
+  tracking-base-url: "https://track.fleetos.io"
+---
+# Ingress with WebSocket support
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fleetos-ingress
+  namespace: fleetos
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "3600"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    # WebSocket upgrade
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "Upgrade";
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - api.fleetos.io
+    secretName: fleetos-tls
+  rules:
+  - host: api.fleetos.io
+    http:
+      paths:
+      - path: /v1/orders
+        pathType: Prefix
+        backend:
+          service:
+            name: order-service
+            port:
+              number: 3001
+      - path: /v1/riders
+        pathType: Prefix
+        backend:
+          service:
+            name: rider-service
+            port:
+              number: 3002
+      - path: /v1/live
+        pathType: Prefix
+        backend:
+          service:
+            name: rider-service
+            port:
+              number: 3005
+      - path: /v1/track
+        pathType: Prefix
+        backend:
+          service:
+            name: order-service
+            port:
+              number: 3001
