@@ -1,12 +1,16 @@
-// Webhook delivery — used by index.ts
-export async function dispatchWebhook(url: string, secret: string, event: string, payload: object): Promise<void> {
+import crypto from "crypto";
+
+export function signPayload(body: string, secret: string): string {
+  return crypto.createHmac("sha256", secret).update(body).digest("hex");
+}
+
+export async function dispatchWebhook(opts: { webhookUrl: string; secret: string; event: string; payload: object }) {
+  const body = JSON.stringify(opts.payload);
   try {
-    const body = JSON.stringify(payload);
-    await fetch(url, {
+    await fetch(opts.webhookUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-FleetOS-Event": event },
+      headers: { "Content-Type": "application/json", "X-FleetOS-Event": opts.event, "X-FleetOS-Signature": "sha256=" + signPayload(body, opts.secret) },
       body,
-      signal: AbortSignal.timeout(10000),
     });
-  } catch (e) { console.error("[Webhook]", e); }
+  } catch (e) { console.error("[webhook] failed:", e); }
 }
