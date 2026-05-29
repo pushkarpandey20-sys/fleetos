@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["nodejs_20", "python3"]
+
+[phases.install]
+cmds = ["cd services/order-service && npm install --ignore-scripts"]
+
+[phases.build]
+cmds = ["cd services/order-service && npx tsc --skipLibCheck || true"]
+
+[start]
+cmd = "cd services/order-service && node dist/server.js || npm run dev"
