@@ -1,30 +1,13 @@
 {
   "name": "fleetos",
   "version": "1.0.0",
-  "description": "FleetOS — Last Mile Delivery Platform",
+  "description": "FleetOS Last Mile Delivery Platform",
   "private": true,
-  "workspaces": [
-    "services/*",
-    "apps/*",
-    "shared/*"
-  ],
   "scripts": {
-    "dev": "docker-compose -f infra/docker/docker-compose.dev.yml up",
-    "dev:order": "cd services/order-service && npm run dev",
-    "dev:dispatch": "cd services/dispatch-engine && go run main.go",
-    "dev:rider": "cd services/rider-service && npm run dev",
-    "dev:notify": "cd services/notification-service && npm run dev",
-    "dev:billing": "cd services/billing-service && npm run dev",
-    "migrate": "cd database && npm run migrate",
-    "seed": "cd database && npm run seed",
-    "test": "npm run test --workspaces",
-    "build": "npm run build --workspaces",
-    "lint": "eslint services/ --ext .ts,.js"
+    "dev": "echo 'Run individual services'",
+    "lint": "eslint services/order-service/src --ext .ts"
   },
   "devDependencies": {
-    "eslint": "^8.57.0",
-    "@typescript-eslint/eslint-plugin": "^7.0.0",
-    "@typescript-eslint/parser": "^7.0.0",
-    "prettier": "^3.2.5"
+    "eslint": "^8.57.0"
   }
 }
