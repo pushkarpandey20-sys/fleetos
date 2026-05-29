@@ -1,0 +1,8 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "cd services/order-service && npm install && npm run dev"
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "on-failure"
