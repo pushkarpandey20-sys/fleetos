@@ -4,24 +4,25 @@ services:
     runtime: node
     rootDir: services/order-service
     buildCommand: npm install --ignore-scripts
-    startCommand: npm run dev
+    startCommand: node -e "require('ts-node').register({transpileOnly:true}); require('./src/server.ts')"
     plan: free
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
       - key: DATABASE_URL
-        sync: false
+        value: postgresql://neondb_owner:npg_yTczHjle5V4F@ep-nameless-lake-ao0ngfmt-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
       - key: REDIS_URL
-        sync: false
-      - key: KAFKA_BROKERS
-        sync: false
+        value: rediss://default:gQAAAAAAAYq9AAIgcDFhZTUwNDEwZWQwYjE0NGE2ODg2ODA1ZDc2NzExNjVhZQ@tender-cod-101053.upstash.io:6379
       - key: JWT_SECRET
-        generateValue: true
+        value: fleetos_jwt_prod_secret_2026_changeme_now
       - key: ENCRYPTION_KEY
-        generateValue: true
-      - key: TRACKING_BASE_URL
-        sync: false
+        value: fleetos_enc_32chars_prod!!2026ok
       - key: ALLOWED_ORIGINS
         value: "*"
+      - key: TRACKING_BASE_URL
+        value: https://fleetos-api.onrender.com/v1/track
+      - key: KAFKA_BROKERS
+        value: ""
