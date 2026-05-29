@@ -1,0 +1,28 @@
+{
+  "name": "@fleetos/billing-service",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "kafkajs": "^2.2.4",
+    "knex": "^3.1.0",
+    "pg": "^8.11.3",
+    "razorpay": "^2.9.2",
+    "winston": "^3.11.0",
+    "dotenv": "^16.3.1",
+    "ulid": "^2.3.0",
+    "zod": "^3.22.4",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "ts-node-dev": "^2.0.0",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.0",
+    "@types/jsonwebtoken": "^9.0.5"
+  }
+}
