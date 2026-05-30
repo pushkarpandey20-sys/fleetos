@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "buildCommand": "npm install --ignore-scripts && npm run build",
+  "installCommand": "npm install --ignore-scripts",
+  "outputDirectory": "dist",
+  "framework": null,
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/api"
+    }
+  ],
+  "functions": {
+    "api/index.js": {
+      "memory": 512,
+      "maxDuration": 30
+    }
+  }
+}
