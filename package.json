@@ -4,7 +4,10 @@
   "private": true,
   "scripts": {
     "build": "cd services/order-service && npm install --ignore-scripts && npm run build",
-    "start": "cd services/order-service && node dist/server.js",
-    "dev": "cd services/order-service && npm run dev"
+    "vercel-build": "cd services/order-service && npm install --ignore-scripts && npm run build"
+  },
+  "dependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
   }
 }
