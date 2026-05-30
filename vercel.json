@@ -1,20 +1,19 @@
 {
   "version": 2,
-  "builds": [
+  "buildCommand": "cd services/order-service && npm install --ignore-scripts && npm run build",
+  "installCommand": "echo skip",
+  "outputDirectory": "services/order-service/dist",
+  "framework": null,
+  "rewrites": [
     {
-      "src": "services/order-service/src/server.ts",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": [
-          "services/order-service/src/**"
-        ]
-      }
+      "source": "/(.*)",
+      "destination": "/api/index"
     }
   ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "services/order-service/src/server.ts"
+  "functions": {
+    "api/index.js": {
+      "memory": 512,
+      "maxDuration": 30
     }
-  ]
+  }
 }
